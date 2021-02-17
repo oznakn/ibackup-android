@@ -3,6 +3,7 @@ package com.oznakn.ibackup;
 import android.content.Context;
 import android.util.Log;
 
+import com.google.gson.JsonObject;
 import com.koushikdutta.ion.Ion;
 
 import java.io.File;
@@ -30,34 +31,29 @@ public class CloudManager {
         this.context = context;
     }
 
-    public void upload(Media media, onUploadListener onUploadListener) {
-        Log.d("[CloudManager]", "Uploading new media");
-
-        File file = new File(media.path);
-
-        Ion.getDefault(context)
-            .getConscryptMiddleware().enable(false);
+    public void uploadImage(Image image, onUploadListener onUploadListener) {
+        Log.d("[CloudManager]", "Uploading new image");
 
         Ion.with(this.context)
                 .load("POST", "http://mac.oznakn.com:8080/api/upload")
-                .setMultipartParameter("source","Android")
-                .setMultipartParameter("path","/device")
-                .setMultipartFile("file", file)
+                .setMultipartParameter("source",Utils.getDeviceName(this.context))
+                .setMultipartParameter("path", image.path)
+                .setMultipartFile("file", new File(image.path))
                 .asJsonObject()
                 .setCallback((e, result) -> {
                     if (e == null) {
-                        Log.d("[CloudManager]", result.toString());
-
-                        onUploadListener.onSuccess(media);
+                        onUploadListener.onSuccess(result);
                     } else {
-                        e.printStackTrace();
-                        onUploadListener.onError(media);
+                        onUploadListener.onError(result, e);
                     }
                 });
     }
 
-    public interface onUploadListener {
-        void onSuccess(Media media);
-        void onError(Media media);
+    public abstract static class onUploadListener {
+        abstract void onSuccess(JsonObject result);
+
+        void onError(JsonObject result, Exception e) {
+            e.printStackTrace();
+        }
     }
 }

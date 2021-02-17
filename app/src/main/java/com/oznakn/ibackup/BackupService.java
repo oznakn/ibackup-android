@@ -2,7 +2,7 @@ package com.oznakn.ibackup;
 
 import android.app.Service;
 import android.content.Intent;
-import android.database.Cursor;
+import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Handler;
@@ -10,6 +10,11 @@ import android.os.IBinder;
 import android.provider.MediaStore;
 
 import androidx.annotation.Nullable;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
+import java.util.ArrayList;
 
 public class BackupService extends Service {
 
@@ -19,39 +24,54 @@ public class BackupService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-
         this.binder = new Binder();
 
-        this.imageContentObserver = new ImageContentObserver(new Handler(getMainLooper()), this::sendMediaByUri);
+        this.imageContentObserver = new ImageContentObserver(new Handler(getMainLooper()), uri -> {
+            Image image = BackupManager.getInstance(getApplicationContext()).getImageByUri(uri);
+
+            LocalDBHelper.getInstance(BackupService.this).saveImageIfNotExists(image);
+
+            this.runSyncTask();
+        });
+
+        long lastSyncTime = SettingsManager.getInstance(this).getLastSyncTime();
+        ArrayList<Image> images = BackupManager.getInstance(this).getImagesAfterDate(lastSyncTime);
+
+        for (Image image : images) {
+            LocalDBHelper.getInstance(this).saveImageIfNotExists(image);
+        }
+
+        this.runSyncTask();
 
         this.getApplicationContext().getContentResolver().registerContentObserver(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, this.imageContentObserver
         );
     }
 
-    private void sendMediaByUri(Uri uri) {
-        Cursor c = getContentResolver().query(uri, new String[]{"_data", "_display_name", "_id"}, null, null, null);
+    private void runSyncTask() {
+        ArrayList<Image> images = LocalDBHelper.getInstance(this).getNotSyncedImages();
 
-        c.moveToFirst();
+        for (Image image : images) {
+            this.uploadImage(image);
+        }
+    }
 
-        Media media = new Media(
-                c.getInt(c.getColumnIndex("_id")),
-                c.getString(c.getColumnIndex("_data")),
-                c.getString(c.getColumnIndex("_display_name"))
-        );
-
-        c.close();
+    private void uploadImage(Image image) {
+        SettingsManager.getInstance(BackupService.this).setLastSyncTime(image.date);
 
         CloudManager.getInstance(getApplicationContext())
-                .upload(media, new CloudManager.onUploadListener() {
+                .uploadImage(image, new CloudManager.onUploadListener() {
                     @Override
-                    public void onSuccess(Media media) {
+                    public void onSuccess(JsonObject result) {
+                        JsonElement statusElement = result.get("status");
 
-                    }
+                        if (statusElement != null) {
+                            String status = statusElement.getAsString();
 
-                    @Override
-                    public void onError(Media media) {
-
+                            if (status.equals("uploaded") || status.equals("exists")) {
+                                LocalDBHelper.getInstance(BackupService.this).markImageAsSynced(image);
+                            }
+                        }
                     }
                 });
     }
@@ -76,4 +96,29 @@ public class BackupService extends Service {
     public IBinder onBind(Intent intent) {
         return this.binder;
     }
+
+    private static class ImageContentObserver extends ContentObserver {
+        OnImageChangeListener listener;
+
+        public ImageContentObserver(Handler handler, OnImageChangeListener listener) {
+            super(handler);
+
+            this.listener = listener;
+        }
+
+        @Override
+        public void onChange(boolean selfChange, @Nullable Uri uri, int flags) {
+            listener.onChange(uri);
+        }
+
+        @Override
+        public void onChange(boolean selfChange, @Nullable Uri uri) {
+            listener.onChange(uri);
+        }
+
+        public interface OnImageChangeListener {
+            void onChange(Uri uri);
+        }
+    }
+
 }

@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.os.Bundle;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.karumi.dexter.Dexter;
@@ -12,6 +13,7 @@ import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -25,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
                 .withListener(new MultiplePermissionsListener() {
                     @Override
                     public void onPermissionsChecked(MultiplePermissionsReport multiplePermissionsReport) {
-                        startService();
+                        init();
                     }
 
                     @Override
@@ -33,7 +35,36 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                 }).check();
+    }
 
+    private void init() {
+        if (SettingsManager.getInstance(this).getFirstRun()) {
+            runFirstRun();
+        }
+
+        startService();
+    }
+
+    private void runFirstRun() {
+        SettingsManager.getInstance(MainActivity.this).setFirstRun(false);
+
+        final ArrayList<Image> images = BackupManager.getInstance(this).getImagesCursor();
+
+        if (images.size() == 0) {
+            startService();
+        } else {
+            new AlertDialog.Builder(this)
+                    .setMessage(images.size() + " image found")
+                    .setPositiveButton("Sync", (dialog, which) -> {
+                        for (Image image : images) {
+                            LocalDBHelper.getInstance(MainActivity.this).saveImage(image);
+                        }
+
+                        startService();
+                    })
+                    .create()
+                    .show();
+        }
     }
 
     private void startService() {
