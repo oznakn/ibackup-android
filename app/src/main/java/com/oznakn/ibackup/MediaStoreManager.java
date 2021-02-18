@@ -6,14 +6,17 @@ import android.net.Uri;
 import android.provider.MediaStore;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
-public class BackupManager {
+public class MediaStoreManager {
 
-    private static BackupManager instance = null;
+    private static MediaStoreManager instance = null;
 
-    public static BackupManager getInstance(Context context) {
+    public static MediaStoreManager getInstance(Context context) {
         if (instance == null) {
-            instance = new BackupManager(context);
+            instance = new MediaStoreManager(context);
         } else {
             instance.setContext(context);
         }
@@ -23,7 +26,7 @@ public class BackupManager {
 
     private Context context;
 
-    private BackupManager(Context context) {
+    private MediaStoreManager(Context context) {
         this.setContext(context);
     }
 
@@ -60,6 +63,26 @@ public class BackupManager {
         ArrayList<Image> result = Image.createArrayListFromMediaCursor(c);
 
         c.close();
+
+        return result;
+    }
+
+    public ArrayList<String> getImageDirectories() {
+        Cursor c = context.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                new String[]{"_data", "relative_path"}, null, null, null);
+
+        Set<String> set = new HashSet<>();
+
+        for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()) {
+            String path = c.getString(c.getColumnIndex("relative_path"));
+
+            set.add(path);
+        }
+
+        c.close();
+
+        ArrayList<String> result = new ArrayList<>(set);
+        Collections.sort(result);
 
         return result;
     }

@@ -2,7 +2,16 @@ package com.oznakn.ibackup;
 
 import android.Manifest;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.AbsListView;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.SimpleAdapter;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,6 +23,8 @@ import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -35,6 +46,9 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                 }).check();
+
+        ListView listView = findViewById(R.id.listView);
+        listView.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, MediaStoreManager.getInstance(this).getImageDirectories()));
     }
 
     private void init() {
@@ -48,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
     private void runFirstRun() {
         SettingsManager.getInstance(MainActivity.this).setFirstRun(false);
 
-        final ArrayList<Image> images = BackupManager.getInstance(this).getImagesCursor();
+        final ArrayList<Image> images = MediaStoreManager.getInstance(this).getImagesCursor();
 
         if (images.size() == 0) {
             startService();

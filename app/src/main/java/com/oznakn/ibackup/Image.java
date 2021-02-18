@@ -67,7 +67,7 @@ public class Image implements BaseColumns {
     public static ArrayList<Image> createArrayListFromCursor(Cursor c) {
         ArrayList<Image> result = new ArrayList<>();
 
-        for(c.moveToFirst(); !c.isAfterLast(); c.moveToNext()) {
+        for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()) {
             result.add(Image.fromCursor(c));
         }
 
