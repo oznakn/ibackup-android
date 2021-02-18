@@ -38,6 +38,7 @@ public class CloudManager {
                 .load("POST", "http://mac.oznakn.com:8080/api/upload")
                 .setMultipartParameter("source",Utils.getDeviceName(this.context))
                 .setMultipartParameter("path", image.path)
+                .setMultipartParameter("date", Long.toString(image.date))
                 .setMultipartFile("file", new File(image.path))
                 .asJsonObject()
                 .setCallback((e, result) -> {
