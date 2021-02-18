@@ -34,20 +34,24 @@ public class CloudManager {
     public void uploadImage(Image image, onUploadListener onUploadListener) {
         Log.d("[CloudManager]", "Uploading new image");
 
-        Ion.with(this.context)
-                .load("POST", "http://cloud.oznakn.com:8080/api/upload")
-                .setMultipartParameter("source",Utils.getDeviceName(this.context))
-                .setMultipartParameter("path", image.path)
-                .setMultipartParameter("date", Long.toString(image.date))
-                .setMultipartFile("file", new File(image.path))
-                .asJsonObject()
-                .setCallback((e, result) -> {
-                    if (e == null) {
-                        onUploadListener.onSuccess(result);
-                    } else {
-                        onUploadListener.onError(result, e);
-                    }
-                });
+        String url = SettingsManager.getInstance(this.context).getServerUrl();
+
+        if (!url.isEmpty()) {
+            Ion.with(this.context)
+                    .load("POST", String.format("http://%s/api/upload", url))
+                    .setMultipartParameter("source",Utils.getDeviceName(this.context))
+                    .setMultipartParameter("path", image.path)
+                    .setMultipartParameter("date", Long.toString(image.date))
+                    .setMultipartFile("file", new File(image.path))
+                    .asJsonObject()
+                    .setCallback((e, result) -> {
+                        if (e == null) {
+                            onUploadListener.onSuccess(result);
+                        } else {
+                            onUploadListener.onError(result, e);
+                        }
+                    });
+        }
     }
 
     public abstract static class onUploadListener {

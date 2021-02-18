@@ -5,13 +5,18 @@ import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -45,13 +50,14 @@ public class MainActivity extends AppCompatActivity {
                     public void onPermissionRationaleShouldBeShown(List<PermissionRequest> list, PermissionToken permissionToken) {
 
                     }
-                }).check();
-
-        ListView listView = findViewById(R.id.listView);
-        listView.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, MediaStoreManager.getInstance(this).getImageDirectories()));
+                })
+                .check();
     }
 
     private void init() {
+        ListView listView = findViewById(R.id.listView);
+        listView.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, MediaStoreManager.getInstance(this).getImageDirectories()));
+
         if (SettingsManager.getInstance(this).getFirstRun()) {
             runFirstRun();
         }
@@ -83,5 +89,39 @@ public class MainActivity extends AppCompatActivity {
 
     private void startService() {
         startService(new Intent(this, BackupService.class));
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.buttonSettings:
+                final EditText editText = new EditText(this);
+                editText.setText(SettingsManager.getInstance(this).getServerUrl());
+
+                new AlertDialog.Builder(this)
+                        .setMessage("Server URL")
+                        .setView(editText)
+                        .setPositiveButton("Save", (dialog, which) -> {
+                            SettingsManager.getInstance(MainActivity.this).setServerUrl(editText.getText().toString());
+
+                            Toast.makeText(MainActivity.this, "Saved", Toast.LENGTH_SHORT).show();
+                        })
+                        .create()
+                        .show();
+                return true;
+
+            default:
+                // If we got here, the user's action was not recognized.
+                // Invoke the superclass to handle it.
+                return super.onOptionsItemSelected(item);
+
+        }
     }
 }

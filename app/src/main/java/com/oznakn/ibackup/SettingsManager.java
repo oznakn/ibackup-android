@@ -10,6 +10,7 @@ public class SettingsManager {
 
     private final static String SETTING_FIRST_RUN = "first_run";
     private final static String SETTING_LAST_SYNC = "last_sync";
+    private final static String SETTING_SERVER_URL = "server_url";
 
     private static SettingsManager instance = null;
 
@@ -50,13 +51,24 @@ public class SettingsManager {
 
     public long getLastSyncTime() {
         return preferences.getLong(SETTING_LAST_SYNC, Calendar.getInstance().getTimeInMillis());
-
     }
 
     public void setLastSyncTime(long time) {
         SharedPreferences.Editor editor = preferences.edit();
 
         editor.putLong(SETTING_LAST_SYNC, time);
+
+        editor.apply();
+    }
+
+    public String getServerUrl() {
+        return preferences.getString(SETTING_SERVER_URL, "");
+    }
+
+    public void setServerUrl(String url) {
+        SharedPreferences.Editor editor = preferences.edit();
+
+        editor.putString(SETTING_SERVER_URL, url);
 
         editor.apply();
     }
