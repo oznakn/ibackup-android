@@ -62,7 +62,7 @@ public class BackupService extends Service {
     }
 
     private void runSyncTask() {
-        if (Utils.isOnline(this)) {
+        if (Utils.isOnlineWithWiFi(this)) {
             ArrayList<Image> images = LocalDBHelper.getInstance(this).getNotSyncedImages();
 
             sendNotification(images.size());
