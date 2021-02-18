@@ -35,7 +35,7 @@ public class CloudManager {
         Log.d("[CloudManager]", "Uploading new image");
 
         Ion.with(this.context)
-                .load("POST", "http://mac.oznakn.com:8080/api/upload")
+                .load("POST", "http://cloud.oznakn.com:8080/api/upload")
                 .setMultipartParameter("source",Utils.getDeviceName(this.context))
                 .setMultipartParameter("path", image.path)
                 .setMultipartParameter("date", Long.toString(image.date))
