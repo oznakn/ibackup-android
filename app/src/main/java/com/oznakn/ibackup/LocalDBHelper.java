@@ -87,6 +87,12 @@ public class LocalDBHelper extends SQLiteOpenHelper {
                 new String[]{Integer.toString(image.mediaID)});
     }
 
+    public void removeImage(Image image) {
+        SQLiteDatabase db = LocalDBHelper.getInstance(this.context).getWritableDatabase();
+
+        db.delete(Image.TABLE_NAME, Image.COLUMN_NAME_MEDIA_ID + " = ?", new String[]{Integer.toString(image.mediaID)});
+    }
+
     public ArrayList<Image> getNotSyncedImages() {
         SQLiteDatabase db = LocalDBHelper.getInstance(this.context).getReadableDatabase();
 

@@ -36,19 +36,23 @@ public class CloudManager {
 
         String url = SettingsManager.getInstance(this.context).getServerUrl();
 
-        if (!url.isEmpty()) {
+        File file = new File(image.path);
+
+        if (!file.exists()) {
+            onUploadListener.onFileNotFound();
+        } else if (!url.isEmpty()) {
             Ion.with(this.context)
                     .load("POST", String.format("http://%s/api/upload", url))
-                    .setMultipartParameter("source",Utils.getDeviceName(this.context))
+                    .setMultipartParameter("source", Utils.getDeviceName(this.context))
                     .setMultipartParameter("path", image.path)
                     .setMultipartParameter("date", Long.toString(image.date))
-                    .setMultipartFile("file", new File(image.path))
+                    .setMultipartFile("file", file)
                     .asJsonObject()
                     .setCallback((e, result) -> {
                         if (e == null) {
                             onUploadListener.onSuccess(result);
                         } else {
-                            onUploadListener.onError(result, e);
+                            onUploadListener.onServerError(result, e);
                         }
                     });
         }
@@ -57,7 +61,9 @@ public class CloudManager {
     public abstract static class onUploadListener {
         abstract void onSuccess(JsonObject result);
 
-        void onError(JsonObject result, Exception e) {
+        void onFileNotFound() {}
+
+        void onServerError(JsonObject result, Exception e) {
             e.printStackTrace();
         }
     }

@@ -55,17 +55,13 @@ public class BackupService extends Service {
         this.getApplicationContext().getContentResolver().registerContentObserver(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, this.imageContentObserver
         );
-
-        Cursor c = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, null, null, null, null);
-
-        Log.d("[BackupService]", DatabaseUtils.dumpCursorToString(c));
     }
 
     private void runSyncTask() {
+        sendNotification();
+
         if (Utils.isOnlineWithWiFi(this)) {
             ArrayList<Image> images = LocalDBHelper.getInstance(this).getNotSyncedImages();
-
-            sendNotification(images.size());
 
             for (Image image : images) {
                 this.uploadImage(image);
@@ -89,11 +85,22 @@ public class BackupService extends Service {
                                 LocalDBHelper.getInstance(BackupService.this).markImageAsSynced(image);
                             }
                         }
+
+                        sendNotification();
+                    }
+
+                    @Override
+                    void onFileNotFound() {
+                        LocalDBHelper.getInstance(BackupService.this).removeImage(image);
+
+                        sendNotification();
                     }
                 });
     }
 
-    private void sendNotification(int count) {
+    private void sendNotification() {
+        int count = LocalDBHelper.getInstance(this).getNotSyncedImages().size();
+
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
 
         NotificationChannel channel = new NotificationChannel("simpleChannel", "Channel", NotificationManager.IMPORTANCE_MIN);
@@ -116,6 +123,8 @@ public class BackupService extends Service {
 
     @Override
     public void onDestroy() {
+        this.sendNotification();
+
         super.onDestroy();
 
         this.getApplicationContext().getContentResolver().unregisterContentObserver(this.imageContentObserver);

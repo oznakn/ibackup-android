@@ -60,9 +60,9 @@ public class MainActivity extends AppCompatActivity {
 
         if (SettingsManager.getInstance(this).getFirstRun()) {
             runFirstRun();
+        } else {
+            startService();
         }
-
-        startService();
     }
 
     private void runFirstRun() {
@@ -89,6 +89,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void startService() {
         startService(new Intent(this, BackupService.class));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        startService();
     }
 
     @Override
